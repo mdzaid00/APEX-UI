@@ -4,11 +4,11 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "AI API key is not configured on the server." },
+        { error: "Groq API key is not configured on the server." },
         { status: 500 }
       );
     }
@@ -24,19 +24,18 @@ export async function POST(request: Request) {
     }
 
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1200,
-          },
+          model: "openai/gpt-oss-20b",
+          messages: [{ role: "user", content: prompt }],
+          max_completion_tokens: 1200,
+          temperature: 0.7,
         }),
       }
     );
@@ -44,17 +43,14 @@ export async function POST(request: Request) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("Gemini API error:", response.status);
+      console.error("Groq API error:", response.status);
       return NextResponse.json(
-        { error: "The AI provider could not complete the request. Check API access and quota." },
+        { error: "Groq could not complete the request. Check API access and usage limits." },
         { status: 502 }
       );
     }
 
-    const answer = data?.candidates?.[0]?.content?.parts
-      ?.map((part: { text?: string }) => part.text ?? "")
-      .join("\n")
-      .trim();
+    const answer = data?.choices?.[0]?.message?.content?.trim();
 
     if (!answer) {
       return NextResponse.json(
