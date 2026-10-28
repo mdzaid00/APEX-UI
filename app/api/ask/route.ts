@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.APEX_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
